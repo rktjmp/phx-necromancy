@@ -17,7 +17,7 @@ defmodule NecromancyWeb.Router do
   scope "/", NecromancyWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    live "/", NecroLive, :index
   end
 
   # Other scopes may use custom stacks.

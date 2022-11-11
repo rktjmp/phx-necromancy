@@ -26,20 +26,55 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import topbar from "../vendor/topbar"
 
+topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
+var timeout = null
+window.addEventListener("phx:page-loading-start", (info) => {
+  if (timeout) {
+    clearTimeout(timeout)
+    timeout = null
+  }
+  timeout = setTimeout(topbar.show, 200)
+})
+window.addEventListener("phx:page-loading-stop", (info) => {
+  topbar.hide()
+  if (timeout) {
+    clearTimeout(timeout)
+    timeout = null
+  }
+})
+
+// seems that its preferable to always construct the livesocket but not connect
+// it, vs constructing it on demand as redispatched click events don't seem to
+// be caught.
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 let liveSocket = new LiveSocket("/live", Socket, {params: {_csrf_token: csrfToken}})
+liveSocket.enableDebug()
 
-// Show progress bar on live navigation and form submits
-topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
-window.addEventListener("phx:page-loading-start", info => topbar.show())
-window.addEventListener("phx:page-loading-stop", info => topbar.hide())
+let bindConnectForEvent = (el, eventType) => {
+  el.addEventListener(eventType, (e) => {
+    // if we're not connected, connect and then refire the same event incase
+    // we're bound to a phx-click etc.
+    if (!liveSocket.isConnected()) {
+      window.addEventListener("phx:page-loading-stop", () => {
+        el.dispatchEvent(e)
+      }, {once: true})
+      liveSocket.connect()
+    }})
+}
 
-// connect if there are any LiveViews on the page
-liveSocket.connect()
+window.addEventListener("DOMContentLoaded", () => {
+  // This is a generic connect, you could use click, hover, etc.
+  // <button data-connect-liveview="click">...
+  // will connect the livesocket on click. You could also do
+  // <form data-connect-liveview="input">...
+  // but this is not redispatched cleanly, you'd instead have to redispatched
+  // against the actual input field.
+  document.querySelectorAll("[data-connect-liveview]").forEach((el) => {
+    bindConnectForEvent(el, el.dataset.connectLiveview)
+  })
 
-// expose liveSocket on window for web console debug logs and latency simulation:
-// >> liveSocket.enableDebug()
-// >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
-// >> liveSocket.disableLatencySim()
-window.liveSocket = liveSocket
-
+  // Or we could bind to known phx attribute to always resume
+  document.querySelectorAll("[phx-click]").forEach((el) => {
+    bindConnectForEvent(el, "click")
+  })
+})

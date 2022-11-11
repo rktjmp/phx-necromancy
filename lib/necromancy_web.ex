@@ -47,6 +47,8 @@ defmodule NecromancyWeb do
       use Phoenix.LiveView,
         layout: {NecromancyWeb.LayoutView, "live.html"}
 
+      use Phoenix.Component
+
       unquote(view_helpers())
     end
   end
@@ -91,6 +93,7 @@ defmodule NecromancyWeb do
 
       # Import LiveView and .heex helpers (live_render, live_patch, <.form>, etc)
       import Phoenix.LiveView.Helpers
+      import Phoenix.Component
 
       # Import basic rendering functionality (render, render_layout, etc)
       import Phoenix.View
