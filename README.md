@@ -1,3 +1,7 @@
+# Just sharing this code as a short example attached to the forum, not indicitive of best practices but maybe useful as a starting point.
+
+The following readme was written to myself and is not prescriptive, instructive or well considered.
+
 # Necromancy
 
 Using Phoenix.LiveView inplace of classical controllers, optionally
